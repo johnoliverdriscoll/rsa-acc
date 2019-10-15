@@ -1,0 +1,26 @@
+{
+  "name": "rsa-acc",
+  "version": "1.0.0",
+  "description": "RSA accumulator",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+    "big-integer": "^1.6.44",
+    "isprime": "^0.0.2",
+    "typeforce": "^1.18.0"
+  },
+  "devDependencies": {
+    "jsdoc-to-markdown": "^5.0.1",
+    "mocha": "^6.2.0",
+    "should": "^13.2.3"
+  },
+  "scripts": {
+    "doc": "jsdoc2md --template jsdoc2md/README.hbs index.js type.js > README.md",
+    "test": "mocha"
+  },
+  "keywords": [],
+  "author": "John Driscoll",
+  "license": "ISC"
+}

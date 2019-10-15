@@ -1,0 +1,100 @@
+# rsa-acc
+
+This is an implementation of a cryptographic accumulator over the RSA cryptosystem.
+
+Features:
+
+* __Constant time accumulation__: Updating the accumulation does not require access
+to all previously accumulated values.
+* __Constant size accumulation__: Components of the accumulation are constant size.
+* __Trustless proofs__: An untrusted prover may compute a witness of membership
+for any accumulated element without knowledge of any sensitive information.
+* __Constant time witness updates__: Updating witness does not require access
+to all previously accumulated values.
+
+## Setup
+
+```shell
+$ git clone https://github.com/johnoliverdriscoll/rsa-acc
+$ cd rsa-acc
+$ npm install
+```
+
+## Tutorial
+
+Constructing an accumulator requires generating an RSA key (a random key is generated
+if you do not give it one).
+
+```javascript
+// Import rsa-acc.
+const {Accumulator, updateWitness} = require('rsa-acc')
+// An algorithm used to map data to elements in Z_q.
+const hash = 'sha256'
+// Construct a trusted accumulator.
+const accumulator = new Accumulator(hash)
+```
+
+When adding an element, the accumulator returns a witness that can be used to verify
+its membership later.
+
+```javascript
+// Add an element.
+const d1 = '1'
+const u1 = accumulator.add(d1)
+// Verify the result.
+assert(accumulator.verify(u1))
+```
+
+Subsequent additions of elements invalidate the previously returned witnesses. 
+
+```javascript
+// Add a new element.
+const d2 = '2'
+const u2 = accumulator.add(d2)
+// Verify the result.
+assert(accumulator.verify(u2))
+// Demonstrate that the witness for d1 is no longer valid.
+assert(accumulator.verify(u1) === false)
+```
+
+Previous witnesses can be updated using the witnesses returned from subsequent
+additions.
+
+```javascript
+// Update the witness for d1.
+const w1 = updateWitness(H, u2, u1)
+// Verify the result.
+assert(accumulator.verify(w1))
+```
+
+An element can be deleted from the accumulator, which invalidates its witness.
+
+```javascript
+// Delete d1 from the accumulator.
+const u3 = accumulator.del(w1)
+// Demonstrate that the original witness is no longer valid.
+assert(accumulator.verify(w1) === false)
+```
+
+Previous witnesses must be updated after a deletion as well.
+
+```javascript
+// Update the witness for the remaining element.
+const w2 = updateWitness(H, u3, w1)
+// Demonstrate that the new witness is valid.
+assert(accumulator.verify(w2))
+```
+
+The witness for the deleted item will not be valid until it is added to the
+accumulator again.
+
+```javascript
+// Update the witness for the deleted element.
+const w3 = updateWitness(H, u3, u2)
+// Demonstrate that the new witness is not valid either.
+assert(accumulator.verify(w3) === false)
+```
+
+# API Reference
+
+{{>main}}
