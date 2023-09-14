@@ -16,10 +16,8 @@ describe('with sha256', function() {
         q: BigInt(fixtures.q),
       }
 
-      let accumulator
-
       it('constructs accumulator', function() {
-        accumulator = new Accumulator(H, primes)
+        new Accumulator(H, primes)
       })
 
       describe('add', function() {
@@ -146,6 +144,97 @@ describe('with sha256', function() {
             witness = await updateWitness(H, await accumulator.del(item), witness)
             await accumulator.verify(witness).should.be.fulfilledWith(true)
           }
+        })
+
+      })
+
+    })
+
+    describe('with public modulus', function() {
+
+      const n = BigInt(fixtures.p) * BigInt(fixtures.q)
+
+      it('constructs accumulator', function() {
+        new Accumulator(H, n)
+      })
+
+      describe('add', function() {
+
+        let accumulator
+
+        before('constructs accumulator', function() {
+          accumulator = new Accumulator(H, n)
+        })
+
+        const items = fixtures.manyItems
+
+        it('accumulates items', async function() {
+          for (let item of items) {
+            await accumulator.add(item)
+          }
+        })
+
+      })
+
+      describe('verify', function() {
+
+        let accumulator
+
+        before('constructs accumulator', function() {
+          accumulator = new Accumulator(H, n)
+        })
+
+        const items = fixtures.manyItems
+        const witnesses = []
+
+        before('accumulates items', async function() {
+          for (let item of items) {
+            witnesses.push(await accumulator.add(item))
+          }
+        })
+
+        it('verifies recent witness', async function() {
+          await accumulator.verify(witnesses[witnesses.length - 1]).should.be.fulfilledWith(true)
+        })
+
+      })
+
+      describe('del', function() {
+
+        let accumulator
+
+        before('constructs accumulator', function() {
+          accumulator = new Accumulator(H, n)
+        })
+
+        let witness
+
+        before('accumulates item', async function() {
+          witness = await accumulator.add('a')
+        })
+
+        it('throws', async function() {
+          await accumulator.del(witness).should.be.rejected()
+        })
+
+      })
+
+      describe('prove', function() {
+
+        let accumulator
+
+        before('constructs accumulator', function() {
+          accumulator = new Accumulator(H, n)
+        })
+
+        const item = 'a'
+
+        before('accumulates item', async function() {
+          await accumulator.add(item)
+        })
+
+        it('throws', async function() {
+          await accumulator.prove(item).should.be.rejected()
         })
 
       })
