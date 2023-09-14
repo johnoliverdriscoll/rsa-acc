@@ -13,7 +13,7 @@ class Accumulator {
   /**
    * Creates a new Accumulator instance. An Accumulator is a trusted party that stores a secret
    * and can modify the accumulation of member elements.
-   * @param {(String|function)} H The name of a hash algorithm or a function that returns a digest
+   * @param {(String|Function)} H The name of a hash algorithm or a function that returns a digest
    * for an input String or Buffer.
    * @param {(Primes|BigInt)} [key] Optional secret primes or public modulus. If no argument
    * given, secret primes will be generated.
@@ -94,7 +94,7 @@ class Accumulator {
 /**
  * Update an element's witness. This must be called after each addition to or deletion
  * from the accumulation for each remaining element before it may be successfully verified.
- * @param {(String|function)} H The name of a hash algorithm or a function that returns a digest
+ * @param {(String|Function)} H The name of a hash algorithm or a function that returns a digest
  * for an input String or Buffer.
  * @param {(Update|Witness)} updateOrWitness A witness to an element's membersihp or an
  * update from an element's deletion.
