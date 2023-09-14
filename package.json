@@ -1,6 +1,6 @@
 {
   "name": "rsa-acc",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "RSA accumulator",
   "main": "index.js",
   "directories": {
