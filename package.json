@@ -7,15 +7,13 @@
     "test": "test"
   },
   "dependencies": {
-    "big-integer": "^1.6.44",
     "bigint-crypto-utils": "^3.3.0",
     "bigint-mod-arith": "^3.3.1",
-    "isprime": "^0.0.2",
     "typeforce": "^1.18.0"
   },
   "devDependencies": {
-    "jsdoc-to-markdown": "^5.0.1",
-    "mocha": "^6.2.0",
+    "jsdoc-to-markdown": "^8.0.0",
+    "mocha": "^10.2.0",
     "should": "^13.2.3"
   },
   "scripts": {
