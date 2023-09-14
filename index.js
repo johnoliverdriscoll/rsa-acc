@@ -152,7 +152,7 @@ function bufferToHex(buffer) {
 
 /**
  * Map data to a prime number.
- * @param {(String|function)} H The name of a hash algorithm or a function that produces a
+ * @param {(String|Function)} H The name of a hash algorithm or a function that produces a
  * digest for an input String or Buffer.
  * @param {(String|Buffer)} x The element to map.
  * @returns {BigInt} The prime.
