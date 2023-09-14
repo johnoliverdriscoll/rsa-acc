@@ -149,7 +149,7 @@ and can modify the accumulation of member elements.
 | Param | Type | Description |
 | --- | --- | --- |
 | H | <code>String</code> \| <code>function</code> | The name of a hash algorithm or a function that returns a digest for an input String or Buffer. |
-| [key] | [<code>Primes</code>](#Primes) \| [<code>BigInt</code>](#BigInt) | Optional secret primes or public modulus. If no argument giving, secret primes will be generated. |
+| [key] | [<code>Primes</code>](#Primes) \| [<code>BigInt</code>](#BigInt) | Optional secret primes or public modulus. If no argument given, secret primes will be generated. |
 
 <a name="Accumulator+add"></a>
 

@@ -16,7 +16,7 @@ class Accumulator {
    * @param {(String|function)} H The name of a hash algorithm or a function that returns a digest
    * for an input String or Buffer.
    * @param {(Primes|BigInt)} [key] Optional secret primes or public modulus. If no argument
-   * giving, secret primes will be generated.
+   * given, secret primes will be generated.
    */
   constructor(H, key) {
     tf(tf.tuple(type.Hash, tf.maybe(tf.oneOf(type.Primes, type.BigInt))), arguments)

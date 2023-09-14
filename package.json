@@ -20,7 +20,7 @@
     "doc": "jsdoc2md --template jsdoc2md/README.hbs index.js type.js > README.md",
     "test": "mocha"
   },
-  "keywords": [],
   "author": "John Driscoll",
-  "license": "ISC"
+  "license": "ISC",
+  "repository": "https://github.com/johnoliverdriscoll/rsa-acc"
 }
