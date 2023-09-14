@@ -8,6 +8,8 @@
   },
   "dependencies": {
     "big-integer": "^1.6.44",
+    "bigint-crypto-utils": "^3.3.0",
+    "bigint-mod-arith": "^3.3.1",
     "isprime": "^0.0.2",
     "typeforce": "^1.18.0"
   },

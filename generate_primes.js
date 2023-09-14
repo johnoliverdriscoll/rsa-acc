@@ -1,13 +1,8 @@
 'use strict'
-const bn = require('big-integer')
+const {bitLength, isProbablyPrime, randBetween} = require('bigint-crypto-utils')
 const tf = require('typeforce')
 
-const bn2 = new bn(2)
-const bn4 = new bn(4)
-const bn6 = new bn(6)
-const bn31 = new bn(31)
-const bn30 = new bn(30)
-const delta = [bn6, bn4, bn2, bn4, bn2, bn4, bn6, bn2]
+const delta = [6n, 4n, 2n, 4n, 2n, 4n, 6n, 2n]
 
 /**
  * Generates a random prime with specific number of bits.
@@ -17,24 +12,23 @@ const delta = [bn6, bn4, bn2, bn4, bn2, bn4, bn6, bn2]
  */
 function randomPrime(bits) {
   tf(tf.tuple(tf.Number), arguments)
-  bits = new bn(bits)
-  const minPrime = bn2.pow(bits.subtract(bn.one))
-  const maxPrime = bn2.pow(bits).subtract(bn.one)
+  const minPrime = 1n << BigInt(bits - 1)
+  const maxPrime = (1n << BigInt(bits)) - 1n
   let p
   while (true) {
-    p = bn.randBetween(minPrime, maxPrime)
-    p = p.add(new bn(bn31.subtract(p.mod(bn30))))
+    p = randBetween(maxPrime, minPrime)
+    p += 31n - (p % 30n)
     let deltaIdx = 0
-    while (p.bitLength().compareTo(bits) > 0) {
-      if (p.isProbablePrime(1)) {
+    while (bitLength(p) !== bits) {
+      if (isProbablyPrime(p, 1)) {
         break
       }
-      p = p.add(delta[deltaIdx++ % delta.length])
+      p += delta[deltaIdx++ % delta.length]
     }
-    if (p.bitLength().compareTo(bits) > 0) {
+    if (bitLength(p) !== bits) {
       continue
     }
-    if (p.isProbablePrime(10)) {
+    if (isProbablyPrime(p, 24)) {
       return p
     }
   }
@@ -53,12 +47,12 @@ function generatePrimes(modulusBits) {
   let p, q
   let n
   do {
-    n = bn.zero
+    n = 0n
     p = randomPrime(pBits)
     q = randomPrime(qBits)
-    n = p.multiply(q)
-  } while (n.bitLength().toJSNumber() !== modulusBits)
-  if (p.compare(q) < 0) {
+    n = p * q
+  } while (bitLength(n) !== modulusBits)
+  if (p < q) {
     return {p: q, q: p}
   }
   return {p, q}

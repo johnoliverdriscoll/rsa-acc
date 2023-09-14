@@ -2,10 +2,12 @@
 const tf = require('typeforce')
 
 /**
- * @typedef {Object} BigInteger
+ * @typedef {Object} BigInt
  */
-const BigInteger = tf.quacksLike('Integer')
-BigInteger.toJSON = () => 'BigInteger'
+function BigInt(x) {
+  return typeof x === 'bigint'
+}
+BigInt.toJSON = () => 'bigint'
 
 const Data = tf.oneOf(tf.String, tf.Buffer)
 
@@ -13,43 +15,43 @@ const Hash = tf.oneOf(tf.String, tf.Function)
 
 /**
  * @typedef {Object} Primes
- * @property {BigInteger} p The larger prime.
- * @property {BigInteger} q The lesser prime.
+ * @property {BigInt} p The larger prime.
+ * @property {BigInt} q The lesser prime.
  */
 const Primes = tf.object({
-  p: BigInteger,
-  q: BigInteger,
+  p: BigInt,
+  q: BigInt,
 })
 
 /**
  * @typedef {Object} Update
  * @property {(String|Buffer)} x The element.
- * @property {BigInteger} n The modulus.
- * @property {BigInteger} z The accumulation.
+ * @property {BigInt} n The modulus.
+ * @property {BigInt} z The accumulation.
  */
 const Update = tf.object({
   x: tf.oneOf(tf.String, tf.Buffer),
   w: tf.Null,
-  n: BigInteger,
-  z: BigInteger,
+  n: BigInt,
+  z: BigInt,
 })
 
 /**
  * @typedef {Object} Witness
  * @property {(String|Buffer)} x The element.
- * @property {BigInteger} w The witness.
- * @property {BigInteger} n The modulus.
- * @property {BigInteger} z The accumulation.
+ * @property {BigInt} w The witness.
+ * @property {BigInt} n The modulus.
+ * @property {BigInt} z The accumulation.
  */
 const Witness = tf.object({
   x: tf.oneOf(tf.String, tf.Buffer),
-  w: BigInteger,
-  n: BigInteger,
-  z: BigInteger,
+  w: BigInt,
+  n: BigInt,
+  z: BigInt,
 })
 
 module.exports = {
-  BigInteger,
+  BigInt,
   Data,
   Hash,
   Primes,

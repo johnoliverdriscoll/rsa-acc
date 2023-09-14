@@ -116,7 +116,7 @@ from the accumulation for each remaining element before it may be successfully v
 ## Typedefs
 
 <dl>
-<dt><a href="#BigInteger">BigInteger</a> : <code>Object</code></dt>
+<dt><a href="#BigInt">BigInt</a> : <code>Object</code></dt>
 <dd></dd>
 <dt><a href="#Primes">Primes</a> : <code>Object</code></dt>
 <dd></dd>
@@ -132,14 +132,15 @@ from the accumulation for each remaining element before it may be successfully v
 **Kind**: global class  
 
 * [Accumulator](#Accumulator)
-    * [new Accumulator(H, [primes])](#new_Accumulator_new)
-    * [.add(x)](#Accumulator+add) ⇒ [<code>Witness</code>](#Witness)
-    * [.del(update)](#Accumulator+del) ⇒ [<code>Update</code>](#Update)
-    * [.verify(updateOrWitness)](#Accumulator+verify) ⇒ <code>Boolean</code>
+    * [new Accumulator(H, [key])](#new_Accumulator_new)
+    * [.add(x)](#Accumulator+add) ⇒ [<code>Promise.&lt;Witness&gt;</code>](#Witness)
+    * [.del(x)](#Accumulator+del) ⇒ [<code>Promise.&lt;Update&gt;</code>](#Update)
+    * [.verify(A)](#Accumulator+verify) ⇒ <code>Promise.&lt;Boolean&gt;</code>
+    * [.prove(x)](#Accumulator+prove) ⇒ [<code>Promise.&lt;Witness&gt;</code>](#Witness)
 
 <a name="new_Accumulator_new"></a>
 
-### new Accumulator(H, [primes])
+### new Accumulator(H, [key])
 Creates a new Accumulator instance. An Accumulator is a trusted party that stores a secret
 and can modify the accumulation of member elements.
 
@@ -147,17 +148,15 @@ and can modify the accumulation of member elements.
 | Param | Type | Description |
 | --- | --- | --- |
 | H | <code>String</code> \| <code>function</code> | The name of a hash algorithm or a function that returns a digest for an input String or Buffer. |
-| [primes] | [<code>Primes</code>](#Primes) | Optional secret primes. |
+| [key] | [<code>Primes</code>](#Primes) \| [<code>BigInt</code>](#BigInt) | Optional secret primes or public modulus. If no argument giving, secret primes will be generated. |
 
 <a name="Accumulator+add"></a>
 
-### accumulator.add(x) ⇒ [<code>Witness</code>](#Witness)
+### accumulator.add(x) ⇒ [<code>Promise.&lt;Witness&gt;</code>](#Witness)
 Add an element to the accumulator.
 
 **Kind**: instance method of [<code>Accumulator</code>](#Accumulator)  
-**Returns**: [<code>Witness</code>](#Witness) - An object that includes the element added and its witness. This object
-can be passed to [updateWitness](#updateWitness),
-[Accumulator.verify](#Accumulator+update), and [Accumulator.del](#Accumulator+del).  
+**Returns**: [<code>Promise.&lt;Witness&gt;</code>](#Witness) - A witness of the element's membership.  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -165,28 +164,40 @@ can be passed to [updateWitness](#updateWitness),
 
 <a name="Accumulator+del"></a>
 
-### accumulator.del(update) ⇒ [<code>Update</code>](#Update)
+### accumulator.del(x) ⇒ [<code>Promise.&lt;Update&gt;</code>](#Update)
 Delete an element from the accumulation.
 
 **Kind**: instance method of [<code>Accumulator</code>](#Accumulator)  
-**Returns**: [<code>Update</code>](#Update) - An update object. This object can be passed to
-[updateWitness](#updateWitness).  
+**Returns**: [<code>Promise.&lt;Update&gt;</code>](#Update) - An update object.  
 
 | Param | Type | Description |
 | --- | --- | --- |
-| update | [<code>Witness</code>](#Witness) | An object previously returned from [Accumulator.add](#Accumulator+add), [Accumulator.del](#Accumulator+del), or [updateWitness](#updateWitness). |
+| x | <code>String</code> \| <code>Buffer</code> | The element to delete. |
 
 <a name="Accumulator+verify"></a>
 
-### accumulator.verify(updateOrWitness) ⇒ <code>Boolean</code>
+### accumulator.verify(A) ⇒ <code>Promise.&lt;Boolean&gt;</code>
 Verify an element is a member of the accumulation.
 
 **Kind**: instance method of [<code>Accumulator</code>](#Accumulator)  
-**Returns**: <code>Boolean</code> - True if element is a member of the accumulation; false otherwise.  
+**Returns**: <code>Promise.&lt;Boolean&gt;</code> - True if element is a member of the accumulation;
+false otherwise.  
 
 | Param | Type | Description |
 | --- | --- | --- |
-| updateOrWitness | [<code>Update</code>](#Update) \| [<code>Witness</code>](#Witness) | An update object returned from [Accumulator.add](#Accumulator+add) or a witness object returned from [updateWitness](#updateWitness). |
+| A | [<code>Witness</code>](#Witness) | witness of the element's membership. |
+
+<a name="Accumulator+prove"></a>
+
+### accumulator.prove(x) ⇒ [<code>Promise.&lt;Witness&gt;</code>](#Witness)
+Prove an element's membership.
+
+**Kind**: instance method of [<code>Accumulator</code>](#Accumulator)  
+**Returns**: [<code>Promise.&lt;Witness&gt;</code>](#Witness) - A witness of the element's membership.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| x | <code>String</code> \| <code>Buffer</code> | The element to prove. |
 
 <a name="updateWitness"></a>
 
@@ -199,12 +210,12 @@ from the accumulation for each remaining element before it may be successfully v
 
 | Param | Type | Description |
 | --- | --- | --- |
-| updateOrWitness | [<code>Update</code>](#Update) \| [<code>Witness</code>](#Witness) | An update or witness object returned from [Accumulator.add](#Accumulator+add) or [Accumulator.del](#Accumulator+del). |
-| witness | [<code>Witness</code>](#Witness) | A witness object returned from [Accumulator.add](#Accumulator+add) or [updateWitness](#updateWitness). |
+| updateOrWitness | [<code>Update</code>](#Update) \| [<code>Witness</code>](#Witness) | A witness to an element's membersihp or an update from an element's deletion. |
+| witness | [<code>Witness</code>](#Witness) | The element witness to update. |
 
-<a name="BigInteger"></a>
+<a name="BigInt"></a>
 
-## BigInteger : <code>Object</code>
+## BigInt : <code>Object</code>
 **Kind**: global typedef  
 <a name="Primes"></a>
 
@@ -214,8 +225,8 @@ from the accumulation for each remaining element before it may be successfully v
 
 | Name | Type | Description |
 | --- | --- | --- |
-| p | [<code>BigInteger</code>](#BigInteger) | The larger prime. |
-| q | [<code>BigInteger</code>](#BigInteger) | The lesser prime. |
+| p | [<code>BigInt</code>](#BigInt) | The larger prime. |
+| q | [<code>BigInt</code>](#BigInt) | The lesser prime. |
 
 <a name="Update"></a>
 
@@ -226,8 +237,8 @@ from the accumulation for each remaining element before it may be successfully v
 | Name | Type | Description |
 | --- | --- | --- |
 | x | <code>String</code> \| <code>Buffer</code> | The element. |
-| n | [<code>BigInteger</code>](#BigInteger) | The modulus. |
-| z | [<code>BigInteger</code>](#BigInteger) | The accumulation. |
+| n | [<code>BigInt</code>](#BigInt) | The modulus. |
+| z | [<code>BigInt</code>](#BigInt) | The accumulation. |
 
 <a name="Witness"></a>
 
@@ -238,7 +249,7 @@ from the accumulation for each remaining element before it may be successfully v
 | Name | Type | Description |
 | --- | --- | --- |
 | x | <code>String</code> \| <code>Buffer</code> | The element. |
-| w | [<code>BigInteger</code>](#BigInteger) | The witness. |
-| n | [<code>BigInteger</code>](#BigInteger) | The modulus. |
-| z | [<code>BigInteger</code>](#BigInteger) | The accumulation. |
+| w | [<code>BigInt</code>](#BigInt) | The witness. |
+| n | [<code>BigInt</code>](#BigInt) | The modulus. |
+| z | [<code>BigInt</code>](#BigInt) | The accumulation. |
 
