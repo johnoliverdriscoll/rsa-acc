@@ -1,6 +1,8 @@
 # rsa-acc
 
 This is an implementation of a cryptographic accumulator over the RSA cryptosystem.
+It is a construction of the CL accumulator, however batched updates are currently
+not implemented.
 
 Features:
 
@@ -9,8 +11,7 @@ to all previously accumulated values.
 * __Constant size accumulation__: Components of the accumulation are constant size.
 * __Trustless proofs__: An untrusted prover may compute a witness of membership
 for any accumulated element without knowledge of any sensitive information.
-* __Constant time witness updates__: Updating witness does not require access
-to all previously accumulated values.
+* __Constant time witness updates__: Trustless witness updates are $O(1)$.
 
 ## Setup
 
