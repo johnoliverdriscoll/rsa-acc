@@ -108,7 +108,7 @@ assert(await accumulator.verify(w3) === false)
 ## Functions
 
 <dl>
-<dt><a href="#updateWitness">updateWitness(updateOrWitness, witness)</a> ⇒ <code><a href="#Witness">Witness</a></code></dt>
+<dt><a href="#updateWitness">updateWitness(H, updateOrWitness, witness)</a> ⇒ <code><a href="#Witness">Witness</a></code></dt>
 <dd><p>Update an element&#39;s witness. This must be called after each addition to or deletion
 from the accumulation for each remaining element before it may be successfully verified.</p>
 </dd>
@@ -202,7 +202,7 @@ Prove an element's membership.
 
 <a name="updateWitness"></a>
 
-## updateWitness(updateOrWitness, witness) ⇒ [<code>Witness</code>](#Witness)
+## updateWitness(H, updateOrWitness, witness) ⇒ [<code>Witness</code>](#Witness)
 Update an element's witness. This must be called after each addition to or deletion
 from the accumulation for each remaining element before it may be successfully verified.
 
@@ -211,6 +211,7 @@ from the accumulation for each remaining element before it may be successfully v
 
 | Param | Type | Description |
 | --- | --- | --- |
+| H | <code>String</code> \| <code>function</code> | The name of a hash algorithm or a function that returns a digest for an input String or Buffer. |
 | updateOrWitness | [<code>Update</code>](#Update) \| [<code>Witness</code>](#Witness) | A witness to an element's membersihp or an update from an element's deletion. |
 | witness | [<code>Witness</code>](#Witness) | The element witness to update. |
 

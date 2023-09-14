@@ -17,7 +17,7 @@
     "should": "^13.2.3"
   },
   "scripts": {
-    "doc": "jsdoc2md --template jsdoc2md/README.hbs index.js type.js > README.md",
+    "doc": "jsdoc2md -c .jsdoc.js --template jsdoc2md/README.hbs index.js type.js > README.md",
     "test": "mocha"
   },
   "author": "John Driscoll",
