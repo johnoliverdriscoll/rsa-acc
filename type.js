@@ -29,12 +29,7 @@ const Primes = tf.object({
  * @property {BigInt} n The modulus.
  * @property {BigInt} z The accumulation.
  */
-const Update = tf.object({
-  x: tf.oneOf(tf.String, tf.Buffer),
-  w: tf.Null,
-  n: BigInt,
-  z: BigInt,
-})
+const Update = tf.quacksLike('Update')
 
 /**
  * @typedef {Object} Witness
@@ -43,12 +38,7 @@ const Update = tf.object({
  * @property {BigInt} n The modulus.
  * @property {BigInt} z The accumulation.
  */
-const Witness = tf.object({
-  x: tf.oneOf(tf.String, tf.Buffer),
-  w: BigInt,
-  n: BigInt,
-  z: BigInt,
-})
+const Witness = tf.quacksLike('Witness')
 
 module.exports = {
   BigInt,

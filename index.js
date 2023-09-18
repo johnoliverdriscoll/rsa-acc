@@ -46,7 +46,7 @@ class Accumulator {
     const n = this.n
     this.z = modPow(this.z, y, this.n)
     const z = this.z
-    return {x, w, n, z}
+    return new Witness(this.H, x, w, n, z)
   }
 
   /**
@@ -60,7 +60,7 @@ class Accumulator {
     const n = this.n
     this.z = modPow(this.z, modInv(y, this.d), this.n)
     const z = this.z
-    return {x, n, z}
+    return new Update(this.H, x, n, z)
   }
 
   /**
@@ -86,36 +86,75 @@ class Accumulator {
     const w = modPow(this.z, modInv(y, this.d), this.n)
     const n = this.n
     const z = this.z
-    return {x, w, n, z}
+    return new Witness(this.H, x, w, n, z)
   }
 
 }
 
-/**
- * Update an element's witness. This must be called after each addition to or deletion
- * from the accumulation for each remaining element before it may be successfully verified.
- * @param {(String|function)} H The name of a hash algorithm or a function that returns a digest
- * for an input String or Buffer.
- * @param {(Update|Witness)} updateOrWitness A witness to an element's membersihp or an
- * update from an element's deletion.
- * @param {Witness} witness The element witness to update.
- * @returns {Witness} An updated witness.
- */
-async function updateWitness(H, updateOrWitness, witness) {
-  tf(tf.tuple(type.Hash, tf.oneOf(type.Update, type.Witness), type.Witness), arguments)
-  let {x, w, n} = witness
-  const yt = await mapToPrime(H, updateOrWitness.x)
-  let z
-  if ('w' in updateOrWitness) {
-    z = witness.z
-    w = modPow(w, yt, n)
-  } else {
-    z = updateOrWitness.z
-    const y = await mapToPrime(H, x)
-    const {x: a, y: b} = eGcd(y, yt)
-    w = (modPow(w, b, n) * modPow(z, a, n)) % n
+class Witness {
+
+  /**
+   * Creates a new Witness instance. 
+   * @param {(String|function)} H The name of a hash algorithm or a function that returns a digest
+   * for an input String or Buffer.
+   * @param {Data} x The element.
+   * @param {BigInt} w The accumulation value less the element.
+   * @param {BigInt} n The modulus.
+   * @param {BigInt} z The accumulation value with the element.
+   */
+  constructor(H, x, w, n, z) {
+    tf(tf.tuple(type.Hash, type.Data, type.BigInt, type.BigInt, type.BigInt), arguments)
+    this.H = H
+    this.x = x
+    this.w = w
+    this.n = n
+    this.z = z
   }
-  return {x, w, n, z}
+
+  /**
+   * Update the witness. This must be called after each addition to or deletion
+   * from the accumulation for each remaining element before it may be successfully verified.
+   * @param {(Update|Witness)} updateOrWitness A witness to an element's membersihp or an
+   * update from an element's deletion.
+   * @returns {Promise<Witness>} An updated witness.
+   */
+  async update(updateOrWitness) {
+    tf(tf.tuple(tf.oneOf(type.Update, type.Witness)), arguments)
+    let {x, w, n} = this
+    const yt = await mapToPrime(this.H, updateOrWitness.x)
+    let z
+    if ('w' in updateOrWitness) {
+      z = this.z
+      w = modPow(w, yt, n)
+    } else {
+      z = updateOrWitness.z
+      const y = await mapToPrime(this.H, x)
+      const {x: a, y: b} = eGcd(y, yt)
+      w = (modPow(w, b, n) * modPow(z, a, n)) % n
+    }
+    return new Witness(this.H, x, w, n, z)
+  }  
+
+}
+
+class Update {
+
+  /**
+   * Creates a new Witness instance. 
+   * @param {(String|function)} H The name of a hash algorithm or a function that returns a digest
+   * for an input String or Buffer.
+   * @param {Data} x The element.
+   * @param {BigInt} n The modulus.
+   * @param {BigInt} z The accumulation value with the element.
+   */
+  constructor(H, x, n, z) {
+    tf(tf.tuple(type.Hash, type.Data, type.BigInt, type.BigInt), arguments)
+    this.H = H
+    this.x = x
+    this.n = n
+    this.z = z
+  }
+
 }
 
 /**
@@ -184,5 +223,6 @@ function verify(w, y) {
 
 module.exports = {
   Accumulator,
-  updateWitness,
+  Witness,
+  Update,
 }
