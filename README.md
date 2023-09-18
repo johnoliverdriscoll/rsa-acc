@@ -103,15 +103,10 @@ assert(await accumulator.verify(w3) === false)
 <dl>
 <dt><a href="#Accumulator">Accumulator</a></dt>
 <dd></dd>
-</dl>
-
-## Functions
-
-<dl>
-<dt><a href="#updateWitness">updateWitness(H, updateOrWitness, witness)</a> ⇒ <code><a href="#Witness">Witness</a></code></dt>
-<dd><p>Update an element&#39;s witness. This must be called after each addition to or deletion
-from the accumulation for each remaining element before it may be successfully verified.</p>
-</dd>
+<dt><a href="#Witness">Witness</a></dt>
+<dd></dd>
+<dt><a href="#Update">Update</a></dt>
+<dd></dd>
 </dl>
 
 ## Typedefs
@@ -200,20 +195,58 @@ Prove an element's membership.
 | --- | --- | --- |
 | x | <code>String</code> \| <code>Buffer</code> | The element to prove. |
 
-<a name="updateWitness"></a>
+<a name="Witness"></a>
 
-## updateWitness(H, updateOrWitness, witness) ⇒ [<code>Witness</code>](#Witness)
-Update an element's witness. This must be called after each addition to or deletion
-from the accumulation for each remaining element before it may be successfully verified.
+## Witness
+**Kind**: global class  
 
-**Kind**: global function  
-**Returns**: [<code>Witness</code>](#Witness) - An updated witness.  
+* [Witness](#Witness)
+    * [new Witness(H, x, w, n, z)](#new_Witness_new)
+    * [.update(updateOrWitness)](#Witness+update) ⇒ [<code>Promise.&lt;Witness&gt;</code>](#Witness)
+
+<a name="new_Witness_new"></a>
+
+### new Witness(H, x, w, n, z)
+Creates a new Witness instance.
+
 
 | Param | Type | Description |
 | --- | --- | --- |
 | H | <code>String</code> \| <code>function</code> | The name of a hash algorithm or a function that returns a digest for an input String or Buffer. |
+| x | <code>Data</code> | The element. |
+| w | [<code>BigInt</code>](#BigInt) | The accumulation value less the element. |
+| n | [<code>BigInt</code>](#BigInt) | The modulus. |
+| z | [<code>BigInt</code>](#BigInt) | The accumulation value with the element. |
+
+<a name="Witness+update"></a>
+
+### witness.update(updateOrWitness) ⇒ [<code>Promise.&lt;Witness&gt;</code>](#Witness)
+Update the witness. This must be called after each addition to or deletion
+from the accumulation for each remaining element before it may be successfully verified.
+
+**Kind**: instance method of [<code>Witness</code>](#Witness)  
+**Returns**: [<code>Promise.&lt;Witness&gt;</code>](#Witness) - An updated witness.  
+
+| Param | Type | Description |
+| --- | --- | --- |
 | updateOrWitness | [<code>Update</code>](#Update) \| [<code>Witness</code>](#Witness) | A witness to an element's membersihp or an update from an element's deletion. |
-| witness | [<code>Witness</code>](#Witness) | The element witness to update. |
+
+<a name="Update"></a>
+
+## Update
+**Kind**: global class  
+<a name="new_Update_new"></a>
+
+### new Update(H, x, n, z)
+Creates a new Witness instance.
+
+
+| Param | Type | Description |
+| --- | --- | --- |
+| H | <code>String</code> \| <code>function</code> | The name of a hash algorithm or a function that returns a digest for an input String or Buffer. |
+| x | <code>Data</code> | The element. |
+| n | [<code>BigInt</code>](#BigInt) | The modulus. |
+| z | [<code>BigInt</code>](#BigInt) | The accumulation value with the element. |
 
 <a name="BigInt"></a>
 
@@ -242,6 +275,19 @@ from the accumulation for each remaining element before it may be successfully v
 | n | [<code>BigInt</code>](#BigInt) | The modulus. |
 | z | [<code>BigInt</code>](#BigInt) | The accumulation. |
 
+<a name="new_Update_new"></a>
+
+### new Update(H, x, n, z)
+Creates a new Witness instance.
+
+
+| Param | Type | Description |
+| --- | --- | --- |
+| H | <code>String</code> \| <code>function</code> | The name of a hash algorithm or a function that returns a digest for an input String or Buffer. |
+| x | <code>Data</code> | The element. |
+| n | [<code>BigInt</code>](#BigInt) | The modulus. |
+| z | [<code>BigInt</code>](#BigInt) | The accumulation value with the element. |
+
 <a name="Witness"></a>
 
 ## Witness : <code>Object</code>
@@ -254,4 +300,36 @@ from the accumulation for each remaining element before it may be successfully v
 | w | [<code>BigInt</code>](#BigInt) | The witness. |
 | n | [<code>BigInt</code>](#BigInt) | The modulus. |
 | z | [<code>BigInt</code>](#BigInt) | The accumulation. |
+
+
+* [Witness](#Witness) : <code>Object</code>
+    * [new Witness(H, x, w, n, z)](#new_Witness_new)
+    * [.update(updateOrWitness)](#Witness+update) ⇒ [<code>Promise.&lt;Witness&gt;</code>](#Witness)
+
+<a name="new_Witness_new"></a>
+
+### new Witness(H, x, w, n, z)
+Creates a new Witness instance.
+
+
+| Param | Type | Description |
+| --- | --- | --- |
+| H | <code>String</code> \| <code>function</code> | The name of a hash algorithm or a function that returns a digest for an input String or Buffer. |
+| x | <code>Data</code> | The element. |
+| w | [<code>BigInt</code>](#BigInt) | The accumulation value less the element. |
+| n | [<code>BigInt</code>](#BigInt) | The modulus. |
+| z | [<code>BigInt</code>](#BigInt) | The accumulation value with the element. |
+
+<a name="Witness+update"></a>
+
+### witness.update(updateOrWitness) ⇒ [<code>Promise.&lt;Witness&gt;</code>](#Witness)
+Update the witness. This must be called after each addition to or deletion
+from the accumulation for each remaining element before it may be successfully verified.
+
+**Kind**: instance method of [<code>Witness</code>](#Witness)  
+**Returns**: [<code>Promise.&lt;Witness&gt;</code>](#Witness) - An updated witness.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| updateOrWitness | [<code>Update</code>](#Update) \| [<code>Witness</code>](#Witness) | A witness to an element's membersihp or an update from an element's deletion. |
 
