@@ -16,145 +16,121 @@ describe('with sha256', function() {
         q: BigInt(fixtures.q),
       }
 
-      describe('Accumulator', function() {
+      it('constructs accumulator', function() {
+        new Accumulator(H, primes)
+      })
 
-        it('constructs accumulator', function() {
-          new Accumulator(H, primes)
+      describe('add', function() {
+
+        let accumulator
+
+        before('constructs accumulator', function() {
+          accumulator = new Accumulator(H, primes)
         })
 
-        describe('add', function() {
+        const items = fixtures.manyItems
 
-          let accumulator
-
-          before('constructs accumulator', function() {
-            accumulator = new Accumulator(H, primes)
-          })
-
-          const items = fixtures.manyItems
-
-          it('accumulates items', async function() {
-            for (let item of items) {
-              const witness = await accumulator.add(item)
-              witness.should.be.instanceOf(Witness)
-            }
-          })
-
-        })
-
-        describe('verify', function() {
-
-          let accumulator
-
-          before('constructs accumulator', function() {
-            accumulator = new Accumulator(H, primes)
-          })
-
-          const items = fixtures.manyItems
-          const witnesses = []
-
-          before('accumulates items', async function() {
-            for (let item of items) {
-              witnesses.push(await accumulator.add(item))
-            }
-          })
-
-          it('verifies recent witness', async function() {
-            await accumulator.verify(witnesses[witnesses.length - 1]).should.be.fulfilledWith(true)
-          })
-
-          it('fails to verify outdated witnesses', async function() {
-            for (let witness of witnesses.slice(0, -1)) {
-              await accumulator.verify(witness).should.be.fulfilledWith(false)
-            }
-          })
-
-        })
-
-        describe('prove', function() {
-
-          let accumulator
-
-          before('constructs accumulator', function() {
-            accumulator = new Accumulator(H, primes)
-          })
-
-          const items = fixtures.fewItems
-
-          before('accumulates items', async function() {
-            for (let item of items) {
-              await accumulator.add(item)
-            }
-          })
-
-          it('proves membership', async function() {
-            for (let item of items) {
-              await accumulator.verify(await accumulator.prove(item)).should.be.fulfilledWith(true)
-            }
-          })
-
-        })
-
-        describe('del', function() {
-
-          let accumulator
-
-          before('constructs accumulator', function() {
-            accumulator = new Accumulator(H, primes)
-          })
-
-          const items = fixtures.fewItems
-          const witnesses = []
-
-          before('accumulates items', async function() {
-            for (let item of items) {
-              witnesses.push(await accumulator.add(item))
-            }
-          })
-
-          it('deletes items', async function() {
-            let witness = witnesses.pop()
-            for (let item of items.slice(0, -1)) {
-              const update = await accumulator.del(item)
-              update.should.be.instanceOf(Update)
-              witness = await witness.update(update)
-              await accumulator.verify(witness).should.be.fulfilledWith(true)
-            }
-          })
-
+        it('accumulates items', async function() {
+          for (let item of items) {
+            const witness = await accumulator.add(item)
+            witness.should.be.instanceOf(Witness)
+          }
         })
 
       })
 
-      describe('Witness', function() {
+      describe('verify', function() {
 
-        describe('update', function() {
+        let accumulator
 
-          let accumulator
+        before('constructs accumulator', function() {
+          accumulator = new Accumulator(H, primes)
+        })
 
-          before('constructs accumulator', function() {
-            accumulator = new Accumulator(H, primes)
-          })
+        const items = fixtures.manyItems
+        const witnesses = []
 
-          const items = fixtures.fewItems
-          const witnesses = []
+        before('accumulates items', async function() {
+          for (let item of items) {
+            witnesses.push(await accumulator.add(item))
+          }
+        })
 
-          before('accumulates items', async function() {
-            for (let item of items) {
-              witnesses.push(await accumulator.add(item))
+        it('verifies recent witness', async function() {
+          await accumulator.verify(witnesses[witnesses.length - 1]).should.be.fulfilledWith(true)
+        })
+
+        it('fails to verify outdated witnesses', async function() {
+          for (let witness of witnesses.slice(0, -1)) {
+            await accumulator.verify(witness).should.be.fulfilledWith(false)
+          }
+        })
+
+        it('verifies updated witnesses', async function() {
+          for (let witness of witnesses.slice(0, -1)) {
+            const update = new Update(accumulator)
+            for (let prev of witnesses.slice(witnesses.indexOf(witness) + 1)) {
+              await update.add(prev)
             }
-          })
+            witness = await update.update(witness)
+            await accumulator.verify(witness).should.be.fulfilledWith(true)
+          }
+        })
 
-          it('updates witnesses', async function() {
-            for (let i = 0; i < witnesses.length; i++) {
-              let index = i + 1
-              let witness = witnesses[i]
-              while (index < witnesses.length) {
-                witness = await witness.update(witnesses[index++])
-              }
-              await accumulator.verify(witness).should.be.fulfilledWith(true)
-            }
-          })
+      })
 
+      describe('prove', function() {
+
+        let accumulator
+
+        before('constructs accumulator', function() {
+          accumulator = new Accumulator(H, primes)
+        })
+
+        const items = fixtures.fewItems
+
+        before('accumulates items', async function() {
+          for (let item of items) {
+            await accumulator.add(item)
+          }
+        })
+
+        it('proves membership', async function() {
+          for (let item of items) {
+            await accumulator.verify(await accumulator.prove(item)).should.be.fulfilledWith(true)
+          }
+        })
+
+      })
+
+      describe('del', function() {
+
+        let accumulator
+
+        before('constructs accumulator', function() {
+          accumulator = new Accumulator(H, primes)
+        })
+
+        const items = fixtures.fewItems
+        const witnesses = []
+
+        before('accumulates items', async function() {
+          for (let item of items) {
+            witnesses.push(await accumulator.add(item))
+          }
+        })
+
+        it('deletes items', async function() {
+          const recent = witnesses.pop()
+          for (let witness of witnesses) {
+            const z = await accumulator.del(witness)
+            z.should.be.instanceOf(BigInt)
+          }
+          const update = new Update(accumulator)
+          for (let witness of witnesses) {
+            await update.del(witness)
+          }
+          await accumulator.verify(await update.update(recent)).should.be.fulfilledWith(true)
         })
 
       })

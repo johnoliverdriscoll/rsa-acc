@@ -41,38 +41,36 @@ class Accumulator {
    */
   async add(x) {
     tf(tf.tuple(type.Data), arguments)
-    const y = await mapToPrime(this.H, x)
+    const {y, nonce} = await mapToPrime(this.H, x)
     const w = this.z
     const n = this.n
     this.z = modPow(this.z, y, this.n)
-    const z = this.z
-    return new Witness(this.H, x, w, n, z)
+    return new Witness(x, nonce, w)
   }
 
   /**
    * Delete an element from the accumulation.
-   * @param {(String|Buffer)} x The element to delete.
-   * @returns {Promise<Update>} An update object.
+   * @param {Witness} witness Witness of element to delete.
+   * @returns {Promise<BigInt>} The new accumulation.
    */
-  async del(x) {
-    tf(tf.tuple(type.Data), arguments)
-    const y = await mapToPrime(this.H, x)
+  async del({x, nonce}) {
+    tf(tf.tuple(type.Witness), arguments)
+    const y = await mapToBigInt(this.H, x) + nonce
     const n = this.n
     this.z = modPow(this.z, modInv(y, this.d), this.n)
-    const z = this.z
-    return new Update(this.H, x, n, z)
+    return this.z
   }
 
   /**
    * Verify an element is a member of the accumulation.
-   * @param {Witness} A witness of the element's membership.
+   * @param {Witness} witness A witness of the element's membership.
    * @returns {Promise<Boolean>} True if element is a member of the accumulation;
    * false otherwise.
    */
-  async verify({x, w}) {
-    tf(tf.tuple(tf.oneOf(type.Update, type.Witness)), arguments)
-    const y = await mapToPrime(this.H, x)
-    return await verify.call(this, w, y)
+  async verify({x, nonce, w}) {
+    tf(tf.tuple(type.Witness), arguments)
+    const y = await mapToBigInt(this.H, x) + nonce
+    return modPow(w, y, this.n) === this.z
   }
 
   /**
@@ -82,11 +80,11 @@ class Accumulator {
    */
   async prove(x) {
     tf(tf.tuple(type.Data), arguments)
-    const y = await mapToPrime(this.H, x)
+    const {y, nonce} = await mapToPrime(this.H, x)
     const w = modPow(this.z, modInv(y, this.d), this.n)
     const n = this.n
     const z = this.z
-    return new Witness(this.H, x, w, n, z)
+    return new Witness(x, nonce, w, n, z)
   }
 
 }
@@ -95,64 +93,89 @@ class Witness {
 
   /**
    * Creates a new Witness instance. 
-   * @param {(String|function)} H The name of a hash algorithm or a function that returns a digest
-   * for an input String or Buffer.
    * @param {Data} x The element.
+   * @param {BigInt} nonce Sums to a prime when added to `H(x)`.
    * @param {BigInt} w The accumulation value less the element.
-   * @param {BigInt} n The modulus.
-   * @param {BigInt} z The accumulation value with the element.
    */
-  constructor(H, x, w, n, z) {
-    tf(tf.tuple(type.Hash, type.Data, type.BigInt, type.BigInt, type.BigInt), arguments)
-    this.H = H
+  constructor(x, nonce, w) {
+    tf(tf.tuple(type.Data, type.BigInt, type.BigInt), arguments)
     this.x = x
+    this.nonce = nonce
     this.w = w
-    this.n = n
-    this.z = z
   }
-
-  /**
-   * Update the witness. This must be called after each addition to or deletion
-   * from the accumulation for each remaining element before it may be successfully verified.
-   * @param {(Update|Witness)} updateOrWitness A witness to an element's membersihp or an
-   * update from an element's deletion.
-   * @returns {Promise<Witness>} An updated witness.
-   */
-  async update(updateOrWitness) {
-    tf(tf.tuple(tf.oneOf(type.Update, type.Witness)), arguments)
-    let {x, w, n} = this
-    const yt = await mapToPrime(this.H, updateOrWitness.x)
-    let z
-    if ('w' in updateOrWitness) {
-      z = this.z
-      w = modPow(w, yt, n)
-    } else {
-      z = updateOrWitness.z
-      const y = await mapToPrime(this.H, x)
-      const {x: a, y: b} = eGcd(y, yt)
-      w = (modPow(w, b, n) * modPow(z, a, n)) % n
-    }
-    return new Witness(this.H, x, w, n, z)
-  }  
 
 }
 
 class Update {
 
   /**
-   * Creates a new Witness instance. 
-   * @param {(String|function)} H The name of a hash algorithm or a function that returns a digest
-   * for an input String or Buffer.
-   * @param {Data} x The element.
-   * @param {BigInt} n The modulus.
-   * @param {BigInt} z The accumulation value with the element.
+   * Creates a new Update instance. 
+   * @param {Accumulator} accumulator The current accumulation.
    */
-  constructor(H, x, n, z) {
-    tf(tf.tuple(type.Hash, type.Data, type.BigInt, type.BigInt), arguments)
+  constructor({H, n, z}) {
+    tf(tf.tuple(type.Accumulator), arguments)
     this.H = H
-    this.x = x
     this.n = n
     this.z = z
+    this.piA = 1n
+    this.piD = 1n
+  }
+
+  /**
+   * Absorb an addition to the update.
+   * @param {Witness} witness A witness of the element's addition.
+   */
+  async add({x, nonce}) {
+    tf(tf.tuple(type.Witness), arguments)
+    const y = await mapToBigInt(this.H, x) + nonce
+    this.piA *= y
+  }
+
+  /**
+   * Absorb a deletion to the update.
+   * @param {Witness} witness A witness of the element's addition.
+   */
+  async del({x, nonce}) {
+    tf(tf.tuple(type.Witness), arguments)
+    const y = await mapToBigInt(this.H, x) + nonce
+    this.piD *= y
+  }
+
+  /**
+   * Remove an addition from the update.
+   * @param {Witness} witness A witness of the element's addition.
+   */
+  async undoAdd({x, nonce}) {
+    tf(tf.tuple(type.Witness), arguments)
+    const y = await mapToBigInt(this.H, x) + nonce
+    this.piA /= y
+  }
+
+  /**
+   * Remove a deletion from the update.
+   * @param {Witness} witness A witness of the element's addition.
+   */
+  async undoDel({x, nonce}) {
+    tf(tf.tuple(type.Witness), arguments)
+    const y = await mapToBigInt(this.H, x) + nonce
+    this.piD /= y
+  }
+
+  /**
+   * Update the witness. This must be called after each addition to or deletion
+   * from the accumulation for each remaining element before it may be successfully verified.
+   * @param {Witness} witness The witness to update.
+   * @returns {Promise<Witness>} An updated witness.
+   */
+  async update({x, nonce, w}) {
+    tf(tf.tuple(tf.oneOf(type.Witness)), arguments)
+    const y = await mapToBigInt(this.H, x) + nonce
+    const {x: a, y: b} = eGcd(this.piD, y)
+    return new Witness(
+      x,
+      nonce,
+      (modPow(w, a * this.piA, this.n) * modPow(this.z, b, this.n)) % this.n,
+    )
   }
 
 }
@@ -186,7 +209,36 @@ function nextPrime(y) {
  * @private
  */
 function bufferToHex(buffer) {
+  tf(tf.tuple(tf.oneOf(tf.Buffer, tf.quacksLike('ArrayBuffer'))), arguments)
   return [...new Uint8Array(buffer)].map(x => x.toString(16).padStart(2, '0')).join('')
+}
+
+/**
+ * Produce a hash digest from some data.
+ * @param {(String|function)} H The name of a hash algorithm or a function that produces a
+ * digest for an input String or Buffer.
+ * @param {(String|Buffer)} x The element to map.
+ * @returns {Promise<Buffer>} The digest.
+ * @private
+ */
+async function hash(H, x) {
+  tf(tf.tuple(type.Hash, type.Data), arguments)
+  if (typeof(H) === 'string') {
+    return await subtle.digest(H, x)
+  }
+  return H(x)
+}
+
+/**
+ * Hash an element and interpret it as a number.
+ * @param {(String|Buffer)} x The element to map.
+ * @returns {Promise<Buffer>} The digest.
+ * @private
+ */
+async function mapToBigInt(H, x) {
+  tf(tf.tuple(type.Hash, type.Data), arguments)
+  const maxPrime = 1n << BigInt(constants.PRIME_BITS)
+  return BigInt('0x' + bufferToHex(await hash(H, x))) & (maxPrime - 1n)
 }
 
 /**
@@ -199,26 +251,11 @@ function bufferToHex(buffer) {
  */
 async function mapToPrime(H, x) {
   tf(tf.tuple(type.Hash, type.Data), arguments)
-  let hash
-  if (typeof(H) === 'string') {
-    hash = async d => await subtle.digest(H, d)
-  } else {
-    hash = H
-  }
   const maxPrime = 1n << BigInt(constants.PRIME_BITS)
-  return nextPrime(BigInt('0x' + bufferToHex(await hash(x))) & (maxPrime - 1n)) % maxPrime
-}
-
-/**
- * Verify an element's membership given its witness.
- * @param {BigInt} w The element's witness.
- * @param {BigInt} y The prime the element is mapped to.
- * @returns {Boolean} True if element is a member of the accumulation; false otherwise.
- * @private
- */
-function verify(w, y) {
-  tf(tf.tuple(type.BigInt, type.BigInt), arguments)
-  return modPow(w, y, this.n) === this.z
+  const d = await mapToBigInt(H, x)
+  const y = nextPrime(d) % maxPrime
+  const nonce = y - d
+  return {y, nonce}
 }
 
 module.exports = {

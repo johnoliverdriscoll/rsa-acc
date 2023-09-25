@@ -23,21 +23,10 @@ const Primes = tf.object({
   q: BigInt,
 })
 
-/**
- * @typedef {Object} Update
- * @property {(String|Buffer)} x The element.
- * @property {BigInt} n The modulus.
- * @property {BigInt} z The accumulation.
- */
+const Accumulator = tf.quacksLike('Accumulator')
+
 const Update = tf.quacksLike('Update')
 
-/**
- * @typedef {Object} Witness
- * @property {(String|Buffer)} x The element.
- * @property {BigInt} w The witness.
- * @property {BigInt} n The modulus.
- * @property {BigInt} z The accumulation.
- */
 const Witness = tf.quacksLike('Witness')
 
 module.exports = {
@@ -45,6 +34,7 @@ module.exports = {
   Data,
   Hash,
   Primes,
+  Accumulator,
   Update,
   Witness,
 }

@@ -1,8 +1,6 @@
 # rsa-acc
 
-This is an implementation of a cryptographic accumulator over the RSA cryptosystem.
-It is a construction of the CL accumulator, however batched updates are currently
-not implemented.
+This is an implementation of a CL cryptographic accumulator over the RSA cryptosystem.
 
 Features:
 
@@ -28,7 +26,7 @@ if you do not give it one).
 
 ```javascript
 // Import rsa-acc.
-const {Accumulator, updateWitness} = require('rsa-acc')
+const {Accumulator, Update} = require('rsa-acc')
 // An algorithm used to map data to elements in Z_q.
 const hash = 'SHA-256'
 // Construct a trusted accumulator.
@@ -41,9 +39,9 @@ its membership later.
 ```javascript
 // Add an element.
 const d1 = '1'
-const u1 = await accumulator.add(d1)
+const d1w1 = await accumulator.add(d1)
 // Verify the result.
-assert(await accumulator.verify(u1))
+assert(await accumulator.verify(d1w1))
 ```
 
 Subsequent additions of elements invalidate the previously returned witnesses. 
@@ -51,11 +49,11 @@ Subsequent additions of elements invalidate the previously returned witnesses.
 ```javascript
 // Add a new element.
 const d2 = '2'
-const u2 = await accumulator.add(d2)
+const d2w1 = await accumulator.add(d2)
 // Verify the result.
-assert(await accumulator.verify(u2))
+assert(await accumulator.verify(d2w1))
 // Demonstrate that the witness for d1 is no longer valid.
-assert(await accumulator.verify(u1) === false)
+assert(await accumulator.verify(d1w1) === false)
 ```
 
 Previous witnesses can be updated using the witnesses returned from subsequent
@@ -63,37 +61,32 @@ additions.
 
 ```javascript
 // Update the witness for d1.
-const w1 = await updateWitness(H, u2, u1)
+const update = new Update(accumulator)
+await update.add(d2w1)
+const d1w2 = await update.update(d1w1)
 // Verify the result.
-assert(await accumulator.verify(w1))
+assert(await accumulator.verify(d1w2))
 ```
 
 An element can be deleted from the accumulator, which invalidates its witness.
 
 ```javascript
 // Delete d1 from the accumulator.
-const u3 = await accumulator.del(w1)
-// Demonstrate that the original witness is no longer valid.
-assert(await accumulator.verify(w1) === false)
+await accumulator.del(d1w2)
+// Demonstrate that the element's witnesses are no longer valid.
+assert(await accumulator.verify(d1w1) === false)
+assert(await accumulator.verify(d1w2) === false)
 ```
 
 Previous witnesses must be updated after a deletion as well.
 
 ```javascript
 // Update the witness for the remaining element.
-const w2 = await updateWitness(H, u3, w1)
+const update = new Update(accumulator)
+await update.del(d1w2)
+const d2w2 = await update.update(d2w1)
 // Demonstrate that the new witness is valid.
-assert(await accumulator.verify(w2))
-```
-
-The witness for the deleted item will not be valid until it is added to the
-accumulator again.
-
-```javascript
-// Update the witness for the deleted element.
-const w3 = await updateWitness(H, u3, u2)
-// Demonstrate that the new witness is not valid either.
-assert(await accumulator.verify(w3) === false)
+assert(await accumulator.verify(d2w2))
 ```
 
 # API Reference
@@ -116,10 +109,6 @@ assert(await accumulator.verify(w3) === false)
 <dd></dd>
 <dt><a href="#Primes">Primes</a> : <code>Object</code></dt>
 <dd></dd>
-<dt><a href="#Update">Update</a> : <code>Object</code></dt>
-<dd></dd>
-<dt><a href="#Witness">Witness</a> : <code>Object</code></dt>
-<dd></dd>
 </dl>
 
 <a name="Accumulator"></a>
@@ -130,8 +119,8 @@ assert(await accumulator.verify(w3) === false)
 * [Accumulator](#Accumulator)
     * [new Accumulator(H, [key])](#new_Accumulator_new)
     * [.add(x)](#Accumulator+add) ⇒ [<code>Promise.&lt;Witness&gt;</code>](#Witness)
-    * [.del(x)](#Accumulator+del) ⇒ [<code>Promise.&lt;Update&gt;</code>](#Update)
-    * [.verify(A)](#Accumulator+verify) ⇒ <code>Promise.&lt;Boolean&gt;</code>
+    * [.del(witness)](#Accumulator+del) ⇒ [<code>Promise.&lt;BigInt&gt;</code>](#BigInt)
+    * [.verify(witness)](#Accumulator+verify) ⇒ <code>Promise.&lt;Boolean&gt;</code>
     * [.prove(x)](#Accumulator+prove) ⇒ [<code>Promise.&lt;Witness&gt;</code>](#Witness)
 
 <a name="new_Accumulator_new"></a>
@@ -160,19 +149,19 @@ Add an element to the accumulator.
 
 <a name="Accumulator+del"></a>
 
-### accumulator.del(x) ⇒ [<code>Promise.&lt;Update&gt;</code>](#Update)
+### accumulator.del(witness) ⇒ [<code>Promise.&lt;BigInt&gt;</code>](#BigInt)
 Delete an element from the accumulation.
 
 **Kind**: instance method of [<code>Accumulator</code>](#Accumulator)  
-**Returns**: [<code>Promise.&lt;Update&gt;</code>](#Update) - An update object.  
+**Returns**: [<code>Promise.&lt;BigInt&gt;</code>](#BigInt) - The new accumulation.  
 
 | Param | Type | Description |
 | --- | --- | --- |
-| x | <code>String</code> \| <code>Buffer</code> | The element to delete. |
+| witness | [<code>Witness</code>](#Witness) | Witness of element to delete. |
 
 <a name="Accumulator+verify"></a>
 
-### accumulator.verify(A) ⇒ <code>Promise.&lt;Boolean&gt;</code>
+### accumulator.verify(witness) ⇒ <code>Promise.&lt;Boolean&gt;</code>
 Verify an element is a member of the accumulation.
 
 **Kind**: instance method of [<code>Accumulator</code>](#Accumulator)  
@@ -181,7 +170,7 @@ false otherwise.
 
 | Param | Type | Description |
 | --- | --- | --- |
-| A | [<code>Witness</code>](#Witness) | witness of the element's membership. |
+| witness | [<code>Witness</code>](#Witness) | A witness of the element's membership. |
 
 <a name="Accumulator+prove"></a>
 
@@ -199,54 +188,97 @@ Prove an element's membership.
 
 ## Witness
 **Kind**: global class  
-
-* [Witness](#Witness)
-    * [new Witness(H, x, w, n, z)](#new_Witness_new)
-    * [.update(updateOrWitness)](#Witness+update) ⇒ [<code>Promise.&lt;Witness&gt;</code>](#Witness)
-
 <a name="new_Witness_new"></a>
 
-### new Witness(H, x, w, n, z)
+### new Witness(x, nonce, w)
 Creates a new Witness instance.
 
 
 | Param | Type | Description |
 | --- | --- | --- |
-| H | <code>String</code> \| <code>function</code> | The name of a hash algorithm or a function that returns a digest for an input String or Buffer. |
 | x | <code>Data</code> | The element. |
+| nonce | [<code>BigInt</code>](#BigInt) | Sums to a prime when added to `H(x)`. |
 | w | [<code>BigInt</code>](#BigInt) | The accumulation value less the element. |
-| n | [<code>BigInt</code>](#BigInt) | The modulus. |
-| z | [<code>BigInt</code>](#BigInt) | The accumulation value with the element. |
-
-<a name="Witness+update"></a>
-
-### witness.update(updateOrWitness) ⇒ [<code>Promise.&lt;Witness&gt;</code>](#Witness)
-Update the witness. This must be called after each addition to or deletion
-from the accumulation for each remaining element before it may be successfully verified.
-
-**Kind**: instance method of [<code>Witness</code>](#Witness)  
-**Returns**: [<code>Promise.&lt;Witness&gt;</code>](#Witness) - An updated witness.  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| updateOrWitness | [<code>Update</code>](#Update) \| [<code>Witness</code>](#Witness) | A witness to an element's membersihp or an update from an element's deletion. |
 
 <a name="Update"></a>
 
 ## Update
 **Kind**: global class  
+
+* [Update](#Update)
+    * [new Update(accumulator)](#new_Update_new)
+    * [.add(witness)](#Update+add)
+    * [.del(witness)](#Update+del)
+    * [.undoAdd(witness)](#Update+undoAdd)
+    * [.undoDel(witness)](#Update+undoDel)
+    * [.update(witness)](#Update+update) ⇒ [<code>Promise.&lt;Witness&gt;</code>](#Witness)
+
 <a name="new_Update_new"></a>
 
-### new Update(H, x, n, z)
-Creates a new Witness instance.
+### new Update(accumulator)
+Creates a new Update instance.
 
 
 | Param | Type | Description |
 | --- | --- | --- |
-| H | <code>String</code> \| <code>function</code> | The name of a hash algorithm or a function that returns a digest for an input String or Buffer. |
-| x | <code>Data</code> | The element. |
-| n | [<code>BigInt</code>](#BigInt) | The modulus. |
-| z | [<code>BigInt</code>](#BigInt) | The accumulation value with the element. |
+| accumulator | [<code>Accumulator</code>](#Accumulator) | The current accumulation. |
+
+<a name="Update+add"></a>
+
+### update.add(witness)
+Absorb an addition to the update.
+
+**Kind**: instance method of [<code>Update</code>](#Update)  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| witness | [<code>Witness</code>](#Witness) | A witness of the element's addition. |
+
+<a name="Update+del"></a>
+
+### update.del(witness)
+Absorb a deletion to the update.
+
+**Kind**: instance method of [<code>Update</code>](#Update)  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| witness | [<code>Witness</code>](#Witness) | A witness of the element's addition. |
+
+<a name="Update+undoAdd"></a>
+
+### update.undoAdd(witness)
+Remove an addition from the update.
+
+**Kind**: instance method of [<code>Update</code>](#Update)  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| witness | [<code>Witness</code>](#Witness) | A witness of the element's addition. |
+
+<a name="Update+undoDel"></a>
+
+### update.undoDel(witness)
+Remove a deletion from the update.
+
+**Kind**: instance method of [<code>Update</code>](#Update)  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| witness | [<code>Witness</code>](#Witness) | A witness of the element's addition. |
+
+<a name="Update+update"></a>
+
+### update.update(witness) ⇒ [<code>Promise.&lt;Witness&gt;</code>](#Witness)
+Update the witness. This must be called after each addition to or deletion
+from the accumulation for each remaining element before it may be successfully verified.
+
+**Kind**: instance method of [<code>Update</code>](#Update)  
+**Returns**: [<code>Promise.&lt;Witness&gt;</code>](#Witness) - An updated witness.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| witness | [<code>Witness</code>](#Witness) | The witness to update. |
 
 <a name="BigInt"></a>
 
@@ -262,74 +294,4 @@ Creates a new Witness instance.
 | --- | --- | --- |
 | p | [<code>BigInt</code>](#BigInt) | The larger prime. |
 | q | [<code>BigInt</code>](#BigInt) | The lesser prime. |
-
-<a name="Update"></a>
-
-## Update : <code>Object</code>
-**Kind**: global typedef  
-**Properties**
-
-| Name | Type | Description |
-| --- | --- | --- |
-| x | <code>String</code> \| <code>Buffer</code> | The element. |
-| n | [<code>BigInt</code>](#BigInt) | The modulus. |
-| z | [<code>BigInt</code>](#BigInt) | The accumulation. |
-
-<a name="new_Update_new"></a>
-
-### new Update(H, x, n, z)
-Creates a new Witness instance.
-
-
-| Param | Type | Description |
-| --- | --- | --- |
-| H | <code>String</code> \| <code>function</code> | The name of a hash algorithm or a function that returns a digest for an input String or Buffer. |
-| x | <code>Data</code> | The element. |
-| n | [<code>BigInt</code>](#BigInt) | The modulus. |
-| z | [<code>BigInt</code>](#BigInt) | The accumulation value with the element. |
-
-<a name="Witness"></a>
-
-## Witness : <code>Object</code>
-**Kind**: global typedef  
-**Properties**
-
-| Name | Type | Description |
-| --- | --- | --- |
-| x | <code>String</code> \| <code>Buffer</code> | The element. |
-| w | [<code>BigInt</code>](#BigInt) | The witness. |
-| n | [<code>BigInt</code>](#BigInt) | The modulus. |
-| z | [<code>BigInt</code>](#BigInt) | The accumulation. |
-
-
-* [Witness](#Witness) : <code>Object</code>
-    * [new Witness(H, x, w, n, z)](#new_Witness_new)
-    * [.update(updateOrWitness)](#Witness+update) ⇒ [<code>Promise.&lt;Witness&gt;</code>](#Witness)
-
-<a name="new_Witness_new"></a>
-
-### new Witness(H, x, w, n, z)
-Creates a new Witness instance.
-
-
-| Param | Type | Description |
-| --- | --- | --- |
-| H | <code>String</code> \| <code>function</code> | The name of a hash algorithm or a function that returns a digest for an input String or Buffer. |
-| x | <code>Data</code> | The element. |
-| w | [<code>BigInt</code>](#BigInt) | The accumulation value less the element. |
-| n | [<code>BigInt</code>](#BigInt) | The modulus. |
-| z | [<code>BigInt</code>](#BigInt) | The accumulation value with the element. |
-
-<a name="Witness+update"></a>
-
-### witness.update(updateOrWitness) ⇒ [<code>Promise.&lt;Witness&gt;</code>](#Witness)
-Update the witness. This must be called after each addition to or deletion
-from the accumulation for each remaining element before it may be successfully verified.
-
-**Kind**: instance method of [<code>Witness</code>](#Witness)  
-**Returns**: [<code>Promise.&lt;Witness&gt;</code>](#Witness) - An updated witness.  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| updateOrWitness | [<code>Update</code>](#Update) \| [<code>Witness</code>](#Witness) | A witness to an element's membersihp or an update from an element's deletion. |
 
